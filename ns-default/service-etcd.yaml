@@ -1,0 +1,7 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: etcd
+spec:
+  type: ExternalName
+  externalName: etcd.etcd.svc.cluster.local

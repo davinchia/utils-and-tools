@@ -1,0 +1,11 @@
+Found a better solution than etcd-operator - running etcd with a StatefulSet under a Service. The StatefulSet gives us Persistent Volumes and fixed ips while the Service provides a convenient endpoint. The StatefulSet takes care of keeping etcd pods up as long as there are enough resources. Because pod name and ip remains identical on restart, the pod automatically rejoins the existing cluster.
+
+At the pod level, killed pods are restarted and attached to the same volume by the StatefulSet. At the node level, pods are rescheduled back onto the same node in the event of a node reboot or update. Docs make it unclear what happens if the node is removed. Testing shows a new pod coming up on the next available node attached to the previous PV. This recovery happens even if quorum is lost, which is real nice. 
+
+The downside of this approach is scaling up the cluster once etcd is deployed isn't as easy as using etcd-operator. This is too much of a concern as we do not expect to frequently resize the cluster. I'm thinking a 5-node cluster should be sufficient for most of our needs.
+
+Etcd-operator's tooling is subpar. The backup operator does not work with a GCS backend. The stateful approach means we'd have to use our previous cronjobs for backups, which I am fine with.
+
+The test cases I stressed tested with were - rebooting multiple nodes, removing multiple nodes and manually killing etcd pods. I monitored cluster health, and attempting read/writes in the various scenarios. We could do this with an actual gazette cluster, but that's slightly heavy handed.
+
+This blogpost https://sgotti.me/post/kubernetes-persistent-etcd/ has good information on what this solves, and this is the YAML file https://github.com/sgotti/k8s-persistent-etcd/blob/master/resources/etcd.yaml. This is currently used to coordinate a open-source replicated postgresql-operator called stolon. I've chatted with the lead developer on this and he reports its working very well for him. I think its a good option for us. 
