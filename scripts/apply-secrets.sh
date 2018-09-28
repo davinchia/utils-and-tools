@@ -11,8 +11,39 @@
 # at $secret_path need to be secrets. 
 
 export tmp_file=/tmp/secrets
-export secret_path=secret/yamls/pixel/gazette
-export namespace=default
+export secret_path
+export namespace
+
+sflag=false
+nflag=false
+
+usage() {
+    echo "script usage: $(basename $0) [-s secret_path] [-n namespace]."
+}
+
+while getopts ':s:n:' opt; do
+    case $opt in
+    s)
+      secret_path=$OPTARG
+      sflag=true
+      ;;
+    n)
+      namespace=$OPTARG
+      nflag=true
+      ;;
+    ?)
+      usage
+      exit 1
+      ;;
+    esac
+done
+
+if ! $sflag || ! $nflag
+then
+    echo "Missing command line flags.."
+    usage
+    exit 1
+fi
 
 if [ -d "$tmp_file" ]; then
   echo "Clearing temp secrets directory at $tmp_file"

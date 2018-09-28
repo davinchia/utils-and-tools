@@ -8,15 +8,47 @@
 # namespace the secret resides in. This allows greater namespace customisation
 # when transferring secrets to a new cluster.
 #
-# This temp directory is deleted when the script finishes.
+# The temp directory is deleted when the script finishes.
 
 export tmp_file=/tmp/secrets
-export team=pixel
-export namespace=reporting
+export secret_path=secret/yamls
+export team
+export namespace
+
+tflag=false
+nflag=false
+
+usage() {
+    echo "script usage: $(basename $0) [-t team] [-n namespace]."
+}
+
+while getopts ':t:n:' opt; do
+    case $opt in
+    t)
+      team=$OPTARG
+      tflag=true
+      ;;
+    n)
+      namespace=$OPTARG
+      nflag=true
+      ;;
+    ?)
+      usage
+      exit 1
+      ;;
+    esac
+done
+
+if ! $tflag || ! $nflag 
+then
+    echo "Missing command line flags.."
+    usage
+    exit 1
+fi
 
 if [ -d "$tmp_file" ]; then
-  echo "Clearing temp secrets directory at $tmp_file"
-  rm -r $tmp_file
+    echo "Clearing temp secrets directory at $tmp_file"
+    rm -r $tmp_file
 fi
 
 echo "Creating temp secrets directory.."
@@ -35,10 +67,11 @@ for filename in $tmp_file/*; do
     echo $b
     # Make sure to strip potentially confusing metadata from the secret.
     cat $filename | jq 'del(.metadata.annotations, .metadata.creationTimestamp, .metadata.resourceVersion, .metadata.uid, .metadata.selfLink, .metadata.namespace)' \
-    | vault write secret/yamls/$team/$namespace/$b -
+    | vault write $secret_path/$team/$namespace/$b -
     fi
 done
 echo "Done writing secrets"
+echo "Secrets saved to $secret_path/$team/$namespace"
 
 echo "Removing temp secrets directory.."
 rm -r $tmp_file
