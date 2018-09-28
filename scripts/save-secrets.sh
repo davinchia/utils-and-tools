@@ -4,6 +4,10 @@
 # with the path secret/yamls/$team/$namespace/$secret-name
 # 
 # Before being saved, the secrets are saved to a temp directory for sanitation.
+# Part of this sanitation includes removing the field specifying the 
+# namespace the secret resides in. This allows greater namespace customisation
+# when transferring secrets to a new cluster.
+#
 # This temp directory is deleted when the script finishes.
 
 export tmp_file=/tmp/secrets

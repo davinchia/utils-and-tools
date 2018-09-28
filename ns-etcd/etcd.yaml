@@ -41,8 +41,8 @@ spec:
       - key: pool
         operator: Equal
         value: etcd
-      # assumes there exists a node pool names etcd exists
-      # only deploy to nodes in node pool with etcd label
+      # assumes there exists a node pool names ssd exists
+      # only deploy to nodes in node pool with ssd label
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -51,7 +51,7 @@ spec:
               - key: pool
                 operator: In
                 values:
-                - etcd
+                - ssd
       # use component = etcd to constraint 1 etcd pod per node
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
