@@ -37,7 +37,7 @@ gcloud compute instances add-access-config $node \
 echo "Static ip assigned to $node."
 
 # 4) Assign label to new node.
-kubectl label node $node modelbuilder=true
+kubectl label node $node amazonrds=true
 
 # 5) Delete old pod so pod is scheduled on right node. 
 # Note: Make sure to remove any existing labels nodes.
