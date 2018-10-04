@@ -1,0 +1,9 @@
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: test-ingress
+  namespace: default
+spec:
+  backend:
+    serviceName: api-liveramp
+    servicePort: 8080
