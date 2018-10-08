@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: default
+  name: sysctl-setter
+data:
+  sysctl-setter.sh: |
+    #!/usr/bin/env bash
+    set -o errexit
+    set -o pipefail
+    set -o nounset
+    while true
+    do
+      # NOTE(jmodes):
+      # In regard to HAProxy,
+      # "The number of queuable sockets is determined by the min of
+      # (net.core.somaxconn,
+      # net.ipv4.tcp_max_syn_backlog,
+      # and the listen block's maxconn)"
+      # https://stackoverflow.com/a/8771616
+
+      # Allow a accept()-queue of 32768 connections on any socket, including Unix sockets.
+      sysctl -w net.core.somaxconn=32768
+
+      # Use the full range of available IP ports for ephemeral connections.
+      sysctl -w net.ipv4.ip_local_port_range='1024 65535'
+
+      # Reduce the TIME_WAIT state to 10 seconds for both iptables and local networking use.
+      sysctl -w net.ipv4.tcp_fin_timeout=10
+
+      # Reuse sockets in TIME_WAIT state for new outgoing connections.
+      sysctl -w net.ipv4.tcp_tw_reuse=1
+
+      # Allow a greater quantity of backlogged connections that haven't been
+      # responded to, and don't enable syncookies as we are protected from
+      # SYN-flooding by Google's and Amazon's upstream proxies.
+      #
+      # SYN-flooding protection on GCP LB: https://cloud.google.com/files/GCPDDoSprotection-04122016.pdf
+    # SYN-flooding protection on AWS LB: https://aws.amazon.com/answers/networking/aws-ddos-attack-mitigation/
+      sysctl -w net.ipv4.tcp_max_syn_backlog=65535
+      sysctl -w net.ipv4.tcp_syncookies=0
+
+      # Allow a greater quantity of in-flight connections in iptables. This is
+      # important because iptables is used for Kubernetes service routing.
+      #
+      # Suggested value from:
+      # https://docs.projectcalico.org/v3.1/usage/configuration/conntrack
+      sysctl -w net.netfilter.nf_conntrack_max=10000000
+
+      # set these new sysctls from jspruce
+      sysctl -w net.ipv4.tcp_max_tw_buckets=131072
+      sysctl -w fs.nr_open=20000000
+      sysctl -w net.ipv4.tcp_timestamps=1
+      sysctl -w net.core.netdev_max_backlog=60000
+      sysctl -w net.ipv4.tcp_no_metrics_save=1
+
+      # Network tuning from the internets
+      # https://gist.github.com/voluntas/bc54c60aaa7ad6856e6f6a928b79ab6c#file-sysctl-conf-L39
+
+      # Default Socket Receive Buffer
+      sysctl -w net.core.rmem_default=31457280
+
+      # Maximum Socket Receive Buffer
+      sysctl -w net.core.rmem_max=33554432
+
+      # Default Socket Send Buffer
+      sysctl -w net.core.wmem_default=31457280
+
+      # Maximum Socket Send Buffer
+      sysctl -w net.core.wmem_max=33554432
+
+      # Increase number of incoming connections
+      sysctl -w net.core.somaxconn=65535
+
+      # Increase number of incoming connections backlog
+      sysctl -w net.core.netdev_max_backlog=65536
+
+      # Increase the maximum amount of option memory buffers
+      sysctl -w net.core.optmem_max=25165824
+
+      # Increase the maximum total buffer-space allocatable
+      # This is measured in units of pages (4096 bytes)
+      sysctl -w net.ipv4.tcp_mem='786432 1048576 26777216'
+      sysctl -w net.ipv4.udp_mem='65536 131072 262144'
+
+      # Increase the read-buffer space allocatable
+      sysctl -w net.ipv4.tcp_rmem='8192 87380 33554432'
+      sysctl -w net.ipv4.udp_rmem_min=16384
+
+      # Increase the write-buffer-space allocatable
+      sysctl -w net.ipv4.tcp_wmem='8192 65536 33554432'
+      sysctl -w net.ipv4.udp_wmem_min=16384
+
+      # Increase the tcp-time-wait buckets pool size to prevent simple DOS attacks
+      sysctl -w net.ipv4.tcp_max_tw_buckets=1440000
+
+      sysctl -w net.ipv4.neigh.default.gc_thresh1=4096
+      sysctl -w net.ipv4.neigh.default.gc_thresh2=8192
+      sysctl -w net.ipv4.neigh.default.gc_thresh3=8192
+      sysctl -w net.ipv4.neigh.default.base_reachable_time=86400
+      sysctl -w net.ipv4.neigh.default.gc_stale_time=86400
+
+      # retry every so often to ensure kernel parameters are set
+      sleep 1h
+    done
+    exit 1

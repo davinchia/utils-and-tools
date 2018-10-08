@@ -1,0 +1,9 @@
+# In GCE, the default ingress will use a L7 GCP LB under the hood.
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: test-gclb
+spec:
+  backend:
+    serviceName: api-liveramp
+    servicePort: 8080

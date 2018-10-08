@@ -3,6 +3,12 @@ apiVersion: v1
 metadata:
   namespace: default
   name: api-liveramp
+  annotations:
+    # Enable HAProxy health check to quickly remove unresponsive Api pods.
+    # This reduces 5xxs by preventing HAproxy from sending these bad pods requests.
+    # Timeout duration is specified below in 'timeout check'.
+    ingress.appscode.com/check: "true"
+    ingress.appscode.com/check-port: "8080"
 spec:
   selector:
     app: hello-service

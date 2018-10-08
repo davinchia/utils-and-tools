@@ -1,0 +1,67 @@
+# sysctl tweaks required for pixel serving. Needs to run in privileged
+# context.
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+metadata:
+  name: sysctl-setter
+  namespace: default
+  labels:
+    app: sysctl-setter
+spec:
+  selector:
+    matchLabels:
+      app: sysctl-setter
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 5
+  template:
+    metadata:
+      labels:
+        app: sysctl-setter
+    spec:
+      securityContext:
+      hostNetwork: true
+      containers:
+        - name: sysctl-setter
+          image: bash:4
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+          volumeMounts:
+          - name: sysctl-setter
+            mountPath: /var/run/
+          - name: sbin
+            mountPath: /sbin
+            readOnly: true
+          - name: lib64
+            mountPath: /lib64
+            readOnly: true
+          - name: sysctl
+            mountPath: /usr/bin/sysctl
+            readOnly: true
+          command:
+          - bash
+          - "-ec"
+          - /var/run/sysctl-setter.sh
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: sysctl-setter
+          configMap:
+            name: sysctl-setter
+            defaultMode: 0744
+        - hostPath:
+            path: /sbin
+          name: sbin
+        - hostPath:
+            path: /lib64
+          name: lib64
+        - hostPath:
+            path: /usr/sbin/sysctl
+          name: sysctl
+      # Run sysctl-setter on Kubernetes masters and workers.
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists

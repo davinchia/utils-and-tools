@@ -1,0 +1,20 @@
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: proxy
+  namespace: default
+  annotations:
+    ingress.appscode.com/type: NodePort
+    ingress.appscode.com/stats: "true"
+spec:
+  backend:
+      serviceName: api-liveramp
+      servicePort: '8080'
+  rules:
+  - host: /
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: api-liveramp
+          servicePort: '8080'
