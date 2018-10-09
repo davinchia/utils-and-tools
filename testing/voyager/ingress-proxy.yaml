@@ -6,7 +6,15 @@ metadata:
   annotations:
     ingress.appscode.com/type: NodePort
     ingress.appscode.com/stats: "true"
+    ingress.appscode.com/max-connections: "32000"
 spec:
+  resources:
+    requests:
+      memory: "0.2Gi"
+      cpu: "1"
+    limits:
+      memory: "0.2Gi"
+      cpu: "1"
   backend:
       serviceName: api-liveramp
       servicePort: '8080'
@@ -18,3 +26,10 @@ spec:
         backend:
           serviceName: api-liveramp
           servicePort: '8080'
+  frontendRules:
+  - port: 80
+    rules:
+    - 'maxconn 6000'
+  - port: 443
+    rules:
+    - 'maxconn 6000'
