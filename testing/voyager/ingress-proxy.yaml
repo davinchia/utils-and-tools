@@ -8,6 +8,7 @@ metadata:
     ingress.appscode.com/stats: "true"
     ingress.appscode.com/max-connections: "32000"
 spec:
+  # For resources, see https://github.com/appscode/voyager/issues/1267.
   resources:
     requests:
       memory: "0.2Gi"
